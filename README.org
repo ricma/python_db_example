@@ -18,6 +18,10 @@
 
 ** Create an Empty Database
 
+   Note upfront: If you want to get the full example execute the
+   [[*Dump the Whole Database][database dump below]] which will also give you the correct timestamps
+   for some of the examples, like [[*Comparing Times, Selecting on Dates][here: selecting on times/dates]].
+
    This creates a database [[/tmp/test_db.db]]
    (taken from [[http://orgmode.org/worg/org-contrib/babel/languages/ob-doc-sqlite.html][the org manual]])
 
@@ -129,13 +133,16 @@
        end;
 
        -- Change one entry to use the trigger
-       update cars set price = 10000 where rowid = 1;
-       select * from cars where rowid < 3;
+       update cars set price = 10000 where rowid = 5;
+       select * from cars where rowid < 6;
      #+END_SRC
 
      #+RESULTS:
      | 1 | Audi     | de | 10000 | 2017-03-25 19:57:17 |
      | 2 | Mercedes | de | 57127 | 2017-03-25 19:35:52 |
+     | 3 | Skoda    | cz |  9000 | 2017-03-25 19:35:52 |
+     | 4 | Volvo    | se | 29000 | 2017-03-25 19:35:52 |
+     | 5 | Bentley  | en | 10000 | 2017-03-25 21:41:56 |
 
 **** Further Datetime Functions
 
@@ -151,6 +158,17 @@
      |          | + day-of-week / week-of-year |
      | Audi     | 25-03-2017 6 12              |
      | Mercedes | 25-03-2017 6 12              |
+
+**** Comparing Times, Selecting on Dates
+
+     We can use the time stamps for selecting data as follows,
+     see also here: [[http://www.sqlite.org/lang_datefunc.html]]
+
+     #+BEGIN_SRC sqlite :db /tmp/test_db.db
+       -- select all entries changed between 19:45 and 20:00
+       -- Note that these times are UTC
+       select * from cars where last_update between '19:45:00' and '20:00:00';
+     #+END_SRC
 
 **** Performance Information about Queries
 
@@ -191,9 +209,10 @@
      #+END_SRC
 
      #+RESULTS:
-     #+BEGIN_SRC sqlite
+     #+BEGIN_SRC sqlite :db /tmp/test_db.db
      PRAGMA foreign_keys=OFF;
      BEGIN TRANSACTION;
+     drop table if exists greeting;
      CREATE TABLE greeting(
          one varchar(10) not null,
          two varchar(10),
@@ -209,6 +228,7 @@
      INSERT INTO "greeting" VALUES('Goede','dag!','nl','NL');
      INSERT INTO "greeting" VALUES('God','dag!','dk','DK');
      INSERT INTO "greeting" VALUES('God','dag!','se','SE');
+     drop table if exists cars;
      CREATE TABLE Cars(
            Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
            Name TEXT,
@@ -220,8 +240,8 @@
      INSERT INTO "Cars" VALUES(2,'Mercedes','de',57127,'2017-03-25 19:35:52');
      INSERT INTO "Cars" VALUES(3,'Skoda','cz',9000,'2017-03-25 19:35:52');
      INSERT INTO "Cars" VALUES(4,'Volvo','se',29000,'2017-03-25 19:35:52');
-     INSERT INTO "Cars" VALUES(5,'Bentley','en',350000,'2017-03-25 19:35:52');
-     INSERT INTO "Cars" VALUES(6,'Citroen','fr',21000,'2017-03-25 19:35:52');
+     INSERT INTO "Cars" VALUES(5,'Bentley','en',10000,'2017-03-25 21:41:56');
+     INSERT INTO "Cars" VALUES(6,'Citroën','fr',21000,'2017-03-25 22:33:09');
      INSERT INTO "Cars" VALUES(7,'Hummer','en',41400,'2017-03-25 19:35:52');
      INSERT INTO "Cars" VALUES(9,'Volkswagen','de',21600,'2017-03-25 19:35:52');
      DELETE FROM sqlite_sequence;
@@ -232,6 +252,8 @@
      end;
      COMMIT;
      #+END_SRC
+
+     #+RESULTS:
 
 ** Access via Python
 
@@ -269,7 +291,8 @@
              ('Skoda', 'cz', 9000),
              ('Volvo', 'se', 29000),
              ('Bentley', 'en', 350000),
-             ('Citroen', 'fr', 21000),
+             # use some proper unicode characters
+             (u'Citro\u00ebn', 'fr', 21000),
              ('Hummer', 'en', 41400),
              sql_injection_attack,
              ('Volkswagen', 'de', 21600)]
@@ -345,17 +368,17 @@
     #+END_SRC
 
     #+RESULTS: sqlite-check-py-input
-    | Id | Name       | Language |  Price | last_update            |
-    |----+------------+----------+--------+------------------------|
-    |  1 | Audi       | de       |  52642 | 2017-03-25 19:35:52    |
-    |  2 | Mercedes   | de       |  57127 | 2017-03-25 19:35:52    |
-    |  3 | Skoda      | cz       |   9000 | 2017-03-25 19:35:52    |
-    |  4 | Volvo      | se       |  29000 | 2017-03-25 19:35:52    |
-    |  5 | Bentley    | en       | 350000 | 2017-03-25 19:35:52    |
-    |  6 | Citroen    | fr       |  21000 | 2017-03-25 19:35:52    |
-    |  7 | Hummer     | en       |  41400 | 2017-03-25 19:35:52    |
-    |  9 | Volkswagen | de       |  21600 | 2017-03-25 19:35:52    |
-    |    |            |          |        | (Has trigger attached) |
+    | Id | Name       | Language | Price | last_update            |
+    |----+------------+----------+-------+------------------------|
+    |  1 | Audi       | de       | 10000 | 2017-03-25 19:57:17    |
+    |  2 | Mercedes   | de       | 57127 | 2017-03-25 19:35:52    |
+    |  3 | Skoda      | cz       |  9000 | 2017-03-25 19:35:52    |
+    |  4 | Volvo      | se       | 29000 | 2017-03-25 19:35:52    |
+    |  5 | Bentley    | en       | 10000 | 2017-03-25 21:41:56    |
+    |  6 | Citroën    | fr       | 21000 | 2017-03-25 22:33:09    |
+    |  7 | Hummer     | en       | 41400 | 2017-03-25 19:35:52    |
+    |  9 | Volkswagen | de       | 21600 | 2017-03-25 19:35:52    |
+    |    |            |          |       | (Has trigger attached) |
 
     And to get some info about the tables
     #+begin_src sqlite :db /tmp/test_db.db :colnames yes :exports none
