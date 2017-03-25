@@ -5,13 +5,55 @@
 
 ** Create an Empty Database
 
-   #+BEGIN_SRC shell-script
-     sqlite3 /tmp/test_db.db
-   #+END_SRC
-
-   There enter ~.tables~ and ~.exit~
-
    This creates a database [[/tmp/test_db.db]]
+   (taken from [[http://orgmode.org/worg/org-contrib/babel/languages/ob-doc-sqlite.html][the org manual]])
+
+   #+name: sqlite-populate-test
+   #+header: :results silent
+   #+header: :dir /tmp/
+   #+header: :db test_db.db
+   #+begin_src sqlite
+     drop table if exists greeting;
+     create table greeting(
+         one varchar(10) not null,
+         two varchar(10),
+         lang char(2) not null,
+         country char(2),
+         primary key (lang, country)
+     );
+
+     -- give some content
+     insert into greeting values('Hello', 'world!', 'en', 'UK');
+     --insert into greeting values('G''day', '', 'en', 'UK');
+     insert into greeting values('Hallo', 'Welt!', 'de', 'DE');
+     insert into greeting values('Dobrý', 'den!', 'cz', 'CZ');
+     insert into greeting values('Bonjour', null, 'fr', null);
+   #+end_src
+
+   Check whether it worked
+   #+name: sqlite-hello
+   #+header: :list
+   #+header: :separator \
+   #+header: :results raw
+   #+header: :dir /tmp/
+   #+header: :db test_db.db
+   #+begin_src sqlite
+     -- select * from greeting;
+     select '|', g.lang, '|', g.one, g.two, '|' from greeting as g;
+   #+end_src
+
+   #+RESULTS: sqlite-hello
+   | en | Hello world! |
+   | de | Hallo Welt!  |
+   | cz | Dobrý den!   |
+   | fr | Bonjour      |
+
+*** Alternatively via Commandline
+    #+BEGIN_SRC shell-script
+      sqlite3 /tmp/test_db.db
+    #+END_SRC
+
+    There enter ~.tables~ and ~.exit~
 
 ** Access via Python
 
@@ -25,23 +67,67 @@
          """Create some data in the db"""
          cur = con.cursor()
          # Begin with empty table
-         try:
-             cur.execute("DROP TABLE Cars")
-         except sqlite3.OperationalError:   # table Cars already exists
-             pass
+         cur.execute("DROP TABLE IF EXISTS Cars")
 
-         cur.execute("CREATE TABLE Cars(Id INT, Name TEXT, Price INT)")
-         cur.execute("INSERT INTO Cars VALUES(1,'Audi',52642)")
-         cur.execute("INSERT INTO Cars VALUES(2,'Mercedes',57127)")
-         cur.execute("INSERT INTO Cars VALUES(3,'Skoda',9000)")
-         cur.execute("INSERT INTO Cars VALUES(4,'Volvo',29000)")
-         cur.execute("INSERT INTO Cars VALUES(5,'Bentley',350000)")
-         cur.execute("INSERT INTO Cars VALUES(6,'Citroen',21000)")
-         cur.execute("INSERT INTO Cars VALUES(7,'Hummer',41400)")
-         cur.execute("INSERT INTO Cars VALUES(8,'Volkswagen',21600)")
+         cur.execute("""CREATE TABLE Cars(
+           Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+           Name TEXT,
+           Language CHAR(2),
+           Price INT
+         )""")
+
+         # https://www.xkcd.com/327/
+         sql_injection_attack = (
+             "; ".join([
+                 "'Bobby Tables', 'XK', 0)",
+                 "DROP TABLE Greeting",
+                 "INSERT INTO Cars VALUES('https://www.xkcd.com/327'"]), 'CD',
+             327)
+
+         cars = [
+             ('Audi', 'de', 52642),
+             ('Mercedes', 'de', 57127),
+             ('Skoda', 'cz', 9000),
+             ('Volvo', 'se', 29000),
+             ('Bentley', 'en', 350000),
+             ('Citroen', 'fr', 21000),
+             ('Hummer', 'en', 41400),
+             sql_injection_attack,
+             ('Volkswagen', 'de', 21600)]
+
+         cur.executemany('''
+             INSERT INTO cars(Name, Language, Price) VALUES(?,?,?)''', cars)
 
      with sqlite3.connect(dbase) as connection:
          create_data(connection)
+
+
+     with sqlite3.connect(dbase) as connection:
+         cursor = connection.cursor()
+         # Try SQL injection ... Gives:
+         # sqlite3.Warning: You can only execute one statement at a time.
+         # cursor.execute("INSERT INTO Cars(Name, Language, Price) VALUES({0}, {1}, {2})".format(
+         #     *sql_injection_attack))
+
+         # Therefore we might as well delete the entry
+         name_to_delete = "DROP TABLE"
+         # Approach I: Do search in application
+         cursor.execute(
+             "select Id, Name from cars")
+         idx_to_delete = [row[0] for row in cursor
+                          if name_to_delete in row[1]]
+         # Approach II: Do search on database
+         # (Faster but maybe not database independent)
+         cursor.execute(
+             # Note: This is case insensitive
+             "select Id FROM cars WHERE Name LIKE ?",
+             ("%{0}%".format(name_to_delete), ))
+         idx_to_delete = [row[0] for row in cursor]
+
+         # Delete the entries
+         for idx in idx_to_delete:
+             cursor.execute(
+                 "Delete from cars where id = ?", (int(idx), ))
    #+END_SRC
 
    #+RESULTS:
@@ -50,20 +136,29 @@
 
     You can now ~sqlite3 /tmp/test_db.db~ and
 
-    #+BEGIN_SRC sql
+    #+name: sqlite-check-py-input
+    #+header: :list
+    #+header: :separator \|
+    #+header: :results raw
+    #+header: :dir /tmp/
+    #+header: :db test_db.db
+    #+BEGIN_SRC sqlite
       -- make | the delimiter to give valid org-mode results
-      .mode list
-      .headers on
 
-      SELECT * FROM Cars;
+      SELECT '', *, '' FROM Greeting;
+      SELECT '', *, '' FROM Cars;
     #+END_SRC
-    | Id | Name       |  Price |
-    |----+------------+--------|
-    |  1 | Audi       |  52642 |
-    |  2 | Mercedes   |  57127 |
-    |  3 | Skoda      |   9000 |
-    |  4 | Volvo      |  29000 |
-    |  5 | Bentley    | 350000 |
-    |  6 | Citroen    |  21000 |
-    |  7 | Hummer     |  41400 |
-    |  8 | Volkswagen |  21600 |
+
+    #+RESULTS: sqlite-check-py-input
+    |   Hello | world!     | en |     UK |
+    |   Hallo | Welt!      | de |     DE |
+    |   Dobrý | den!       | cz |     CZ |
+    | Bonjour |            | fr |        |
+    |       1 | Audi       | de |  52642 |
+    |       2 | Mercedes   | de |  57127 |
+    |       3 | Skoda      | cz |   9000 |
+    |       4 | Volvo      | se |  29000 |
+    |       5 | Bentley    | en | 350000 |
+    |       6 | Citroen    | fr |  21000 |
+    |       7 | Hummer     | en |  41400 |
+    |       9 | Volkswagen | de |  21600 |
