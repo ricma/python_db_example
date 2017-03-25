@@ -392,20 +392,19 @@
     #+END_SRC
 
     #+RESULTS:
-
-    | cid | name     | type    | notnull | dflt_value | pk |
-    |-----+----------+---------+---------+------------+----|
-    |   0 | Id       | INTEGER |       1 |            |  1 |
-    |   1 | Name     | TEXT    |       0 |            |  0 |
-    |   2 | Language | CHAR(2) |       0 |            |  0 |
-    |   3 | Price    | INT     |       0 |            |  0 |
+    | cid | name        | type    | notnull | dflt_value        | pk |
+    |-----+-------------+---------+---------+-------------------+----|
+    |   0 | Id          | INTEGER |       1 |                   |  1 |
+    |   1 | Name        | TEXT    |       0 |                   |  0 |
+    |   2 | Language    | CHAR(2) |       0 |                   |  0 |
+    |   3 | Price       | INT     |       0 |                   |  0 |
+    |   4 | last_update | dateime |       0 | current_timestamp |  0 |
 
     #+begin_src sqlite :db /tmp/test_db.db :colnames yes
       pragma table_info(greeting);
     #+END_SRC
 
     #+RESULTS:
-
     | cid | name    | type        | notnull | dflt_value | pk |
     |-----+---------+-------------+---------+------------+----|
     |   0 | one     | varchar(10) |       1 |            |  0 |
@@ -419,7 +418,6 @@
     #+END_SRC
 
     #+RESULTS:
-
     #+BEGIN_SRC sqlite
     CREATE TABLE sqlite_master (
       type text,
