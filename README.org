@@ -1,3 +1,16 @@
+# -*- ispell-dictionary: "english" -*-
+#+AUTHOR: Martin Richter
+#+EMAIL: martin.richter@unice.fr
+
+#+LATEX_CLASS: article
+#+LATEX_CLASS_OPTIONS: [a4paper]
+#+LATEX_HEADER: \usepackage[a4paper, margin=1cm]{geometry}
+
+#+STARTUP: fninline overview showall inlineimages
+
+#+OPTIONS: <:nil d:nil timestamp:t
+#+OPTIONS: ^:nil tags:nil
+#+OPTIONS: toc:nil num:nil
 
 * SQLite Python Example
 
@@ -32,21 +45,24 @@
 
    Check whether it worked
    #+name: sqlite-hello
-   #+header: :list
-   #+header: :separator \
-   #+header: :results raw
+   #+header: :exports code
    #+header: :dir /tmp/
    #+header: :db test_db.db
-   #+begin_src sqlite
+   #+begin_src sqlite :list :separator \ :results raw
      -- select * from greeting;
      select '|', g.lang, '|', g.one, g.two, '|' from greeting as g;
    #+end_src
 
    #+RESULTS: sqlite-hello
-   | en | Hello world! |
-   | de | Hallo Welt!  |
-   | cz | Dobrý den!   |
-   | fr | Bonjour      |
+
+   # Note: we separate the result by a newline in order to export what
+   # is written here instead of executing the code block every time we
+   # export the org file
+   | en | Good day!  |
+   | en | G'day      |
+   | de | Guten Tag! |
+   | cz | Dobrý den! |
+   | fr | Bonjour    |
 
 *** Alternatively via Commandline
     #+BEGIN_SRC shell-script
@@ -73,6 +89,7 @@
     #+end_src
 
     #+RESULTS:
+
     | one     | count(*) |
     |---------+----------|
     | Bonjour |        1 |
@@ -96,6 +113,7 @@
      #+END_SRC
 
      #+RESULTS:
+
      | seq  name             file                                                       |
      | ---  ---------------  ---------------------------------------------------------- |
      | 0    main             /tmp/test_db.db                                            |
@@ -103,29 +121,68 @@
 
 **** Add Triggers on Changes
 
-     #+BEGIN_SRC sqlite
-       create trigger employee_update_trg after update on employee
+     #+BEGIN_SRC sqlite :db /tmp/test_db.db
+       drop trigger if exists car_update_trg;
+       create trigger car_update_trg after update on cars
        begin
-         update employee set updatedon = datetime('NOW') where rowid = new.rowid;
+         update cars set last_update = datetime('NOW') where rowid = new.rowid;
        end;
+
+       -- Change one entry to use the trigger
+       update cars set price = 10000 where rowid = 1;
+       select * from cars where rowid < 3;
      #+END_SRC
+
+     #+RESULTS:
+     | 1 | Audi     | de | 10000 | 2017-03-25 19:57:17 |
+     | 2 | Mercedes | de | 57127 | 2017-03-25 19:35:52 |
 
 **** Further Datetime Functions
 
      Allow for proper formatting:
 
-     #+BEGIN_SRC sqlite
-       select empid,strftime('%d-%m-%Y %w %W',updatedon) from employee;
+     #+BEGIN_SRC sqlite :db /tmp/test_db.db
+       .print '', '+ day-of-week / week-of-year'
+       select c.Name, strftime('%d-%m-%Y %w %W', c.last_update)
+           from cars as c where rowid < 3;
      #+END_SRC
+
+     #+RESULTS:
+     |          | + day-of-week / week-of-year |
+     | Audi     | 25-03-2017 6 12              |
+     | Mercedes | 25-03-2017 6 12              |
 
 **** Performance Information about Queries
 
      Use ~explain~ as in
 
-     #+BEGIN_SRC sqlite :db /tmp/test_db.db
-       explain query plan select * from empdept;
-       explain select empid,strftime('%d-%m-%Y %w %W',updatedon) from employee;
+     #+BEGIN_SRC sqlite :db /tmp/test_db.db :results verbatim
+       explain query plan select * from cars;
+       explain select c.Name, strftime('%d-%m-%Y %w %W', c.last_update)
+           from cars as c where rowid < 3;
      #+END_SRC
+
+     #+RESULTS:
+     #+begin_example
+     0,0,0,"SCAN TABLE cars"
+     0,Init,0,13,0,"",00,
+     1,OpenRead,0,2,0,5,00,
+     2,Rewind,0,11,0,"",00,
+     3,Integer,3,1,0,"",00,
+     4,Rowid,0,2,0,"",00,
+     5,Ge,1,11,2,"",53,
+     6,Column,0,1,3,"",00,
+     7,Column,0,4,6,"",00,
+     8,Function,1,5,4,strftime(-1),02,
+     9,ResultRow,3,2,0,"",00,
+     10,Next,0,4,0,"",00,
+     11,Close,0,0,0,"",00,
+     12,Halt,0,0,0,"",00,
+     13,Transaction,0,0,87,0,01,
+     14,TableLock,0,2,0,Cars,00,
+     15,String8,0,5,0,"%d-%m-%Y %w %W",00,
+     16,Goto,0,1,0,"",00,
+     #+end_example
 
 **** Dump the Whole Database
 
@@ -137,20 +194,6 @@
      #+BEGIN_SRC sqlite
      PRAGMA foreign_keys=OFF;
      BEGIN TRANSACTION;
-     CREATE TABLE Cars(
-           Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-           Name TEXT,
-           Language CHAR(2),
-           Price INT
-         );
-     INSERT INTO "Cars" VALUES(1,'Audi','de',52642);
-     INSERT INTO "Cars" VALUES(2,'Mercedes','de',57127);
-     INSERT INTO "Cars" VALUES(3,'Skoda','cz',9000);
-     INSERT INTO "Cars" VALUES(4,'Volvo','se',29000);
-     INSERT INTO "Cars" VALUES(5,'Bentley','en',350000);
-     INSERT INTO "Cars" VALUES(6,'Citroen','fr',21000);
-     INSERT INTO "Cars" VALUES(7,'Hummer','en',41400);
-     INSERT INTO "Cars" VALUES(9,'Volkswagen','de',21600);
      CREATE TABLE greeting(
          one varchar(10) not null,
          two varchar(10),
@@ -166,15 +209,33 @@
      INSERT INTO "greeting" VALUES('Goede','dag!','nl','NL');
      INSERT INTO "greeting" VALUES('God','dag!','dk','DK');
      INSERT INTO "greeting" VALUES('God','dag!','se','SE');
+     CREATE TABLE Cars(
+           Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+           Name TEXT,
+           Language CHAR(2),
+           Price INT,
+           last_update dateime default current_timestamp
+         );
+     INSERT INTO "Cars" VALUES(1,'Audi','de',10000,'2017-03-25 19:57:17');
+     INSERT INTO "Cars" VALUES(2,'Mercedes','de',57127,'2017-03-25 19:35:52');
+     INSERT INTO "Cars" VALUES(3,'Skoda','cz',9000,'2017-03-25 19:35:52');
+     INSERT INTO "Cars" VALUES(4,'Volvo','se',29000,'2017-03-25 19:35:52');
+     INSERT INTO "Cars" VALUES(5,'Bentley','en',350000,'2017-03-25 19:35:52');
+     INSERT INTO "Cars" VALUES(6,'Citroen','fr',21000,'2017-03-25 19:35:52');
+     INSERT INTO "Cars" VALUES(7,'Hummer','en',41400,'2017-03-25 19:35:52');
+     INSERT INTO "Cars" VALUES(9,'Volkswagen','de',21600,'2017-03-25 19:35:52');
      DELETE FROM sqlite_sequence;
      INSERT INTO "sqlite_sequence" VALUES('Cars',9);
+     CREATE TRIGGER car_update_trg after update on cars
+     begin
+       update cars set last_update = datetime('NOW') where rowid = new.rowid;
+     end;
      COMMIT;
      #+END_SRC
 
-
 ** Access via Python
 
-   #+BEGIN_SRC python :results output raw :exports none
+   #+BEGIN_SRC python :results output raw :exports code
      import sqlite3
 
      dbase = "/tmp/test_db.db"
@@ -190,7 +251,8 @@
            Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
            Name TEXT,
            Language CHAR(2),
-           Price INT
+           Price INT,
+           last_update dateime default current_timestamp
          )""")
 
          # https://www.xkcd.com/327/
@@ -257,44 +319,51 @@
 
     See also [[https://www.sqlite.org/cli.html][online]] for the possible sql commands.
 
-    #+name: sqlite-check-py-input
+    #+name: sqlite-check-sql-input
     #+begin_src sqlite :db /tmp/test_db.db :colnames yes
       .mode csv greeting
       SELECT * FROM Greeting;
+    #+END_SRC
 
-      .print '----', '----', '----', '----'
+    #+RESULTS: sqlite-check-sql-input
+    | one     | two  | lang | country |
+    |---------+------+------+---------|
+    | Good    | day! | en   | UK      |
+    | G'day   |      | en   | AU      |
+    | Guten   | Tag! | de   | DE      |
+    | Dobrý   | den! | cz   | CZ      |
+    | Bonjour |      | fr   |         |
+    | Goede   | dag! | nl   | NL      |
+    | God     | dag! | dk   | DK      |
+    | God     | dag! | se   | SE      |
+
+    #+name: sqlite-check-py-input
+    #+begin_src sqlite :db /tmp/test_db.db :colnames yes
       .mode csv cars
       SELECT * FROM Cars;
+      .print '', '', '', '', '(Has trigger attached)'
     #+END_SRC
 
     #+RESULTS: sqlite-check-py-input
-    | one     | two        | lang     | country |
-    |---------+------------+----------+---------|
-    | Good    | day!       | en       | UK      |
-    | G'day   |            | en       | AU      |
-    | Guten   | Tag!       | de       | DE      |
-    | Dobrý   | den!       | cz       | CZ      |
-    | Bonjour |            | fr       |         |
-    | Goede   | dag!       | nl       | NL      |
-    | God     | dag!       | dk       | DK      |
-    | God     | dag!       | se       | SE      |
-    | ----    | ----       | ----     | ----    |
-    | Id      | Name       | Language | Price   |
-    | 1       | Audi       | de       | 52642   |
-    | 2       | Mercedes   | de       | 57127   |
-    | 3       | Skoda      | cz       | 9000    |
-    | 4       | Volvo      | se       | 29000   |
-    | 5       | Bentley    | en       | 350000  |
-    | 6       | Citroen    | fr       | 21000   |
-    | 7       | Hummer     | en       | 41400   |
-    | 9       | Volkswagen | de       | 21600   |
+    | Id | Name       | Language |  Price | last_update            |
+    |----+------------+----------+--------+------------------------|
+    |  1 | Audi       | de       |  52642 | 2017-03-25 19:35:52    |
+    |  2 | Mercedes   | de       |  57127 | 2017-03-25 19:35:52    |
+    |  3 | Skoda      | cz       |   9000 | 2017-03-25 19:35:52    |
+    |  4 | Volvo      | se       |  29000 | 2017-03-25 19:35:52    |
+    |  5 | Bentley    | en       | 350000 | 2017-03-25 19:35:52    |
+    |  6 | Citroen    | fr       |  21000 | 2017-03-25 19:35:52    |
+    |  7 | Hummer     | en       |  41400 | 2017-03-25 19:35:52    |
+    |  9 | Volkswagen | de       |  21600 | 2017-03-25 19:35:52    |
+    |    |            |          |        | (Has trigger attached) |
 
     And to get some info about the tables
-    #+begin_src sqlite :db /tmp/test_db.db :colnames yes
+    #+begin_src sqlite :db /tmp/test_db.db :colnames yes :exports none
       pragma table_info(Cars);
     #+END_SRC
 
     #+RESULTS:
+
     | cid | name     | type    | notnull | dflt_value | pk |
     |-----+----------+---------+---------+------------+----|
     |   0 | Id       | INTEGER |       1 |            |  1 |
@@ -307,6 +376,7 @@
     #+END_SRC
 
     #+RESULTS:
+
     | cid | name    | type        | notnull | dflt_value | pk |
     |-----+---------+-------------+---------+------------+----|
     |   0 | one     | varchar(10) |       1 |            |  0 |
@@ -320,6 +390,7 @@
     #+END_SRC
 
     #+RESULTS:
+
     #+BEGIN_SRC sqlite
     CREATE TABLE sqlite_master (
       type text,
@@ -337,3 +408,7 @@
 *** Core Functions
 
     [[http://www.sqlite.org/lang_corefunc.html]]
+
+*** Modes for the output
+
+    [[http://www.tutorialspoint.com/sqlite/sqlite_commands.htm]]
