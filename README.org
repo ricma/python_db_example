@@ -83,6 +83,50 @@
     | Good    |        1 |
     | Guten   |        1 |
 
+*** A Little More Detail
+
+    Taken from [[http://www.thegeekstuff.com/2012/09/sqlite-command-examples/][here]].
+
+**** Connect more Databases / In-Memory Databases
+
+     #+BEGIN_SRC sqlite :db /tmp/test_db.db
+       -- add a in-memory db
+       attach database ':memory:' as mem_db;
+       .database
+     #+END_SRC
+
+     #+RESULTS:
+     | seq  name             file                                                       |
+     | ---  ---------------  ---------------------------------------------------------- |
+     | 0    main             /tmp/test_db.db                                            |
+     | 2    mem_db                                                                      |
+
+**** Add Triggers on Changes
+
+     #+BEGIN_SRC sqlite
+       create trigger employee_update_trg after update on employee
+       begin
+         update employee set updatedon = datetime('NOW') where rowid = new.rowid;
+       end;
+     #+END_SRC
+
+**** Further Datetime Functions
+
+     Allow for proper formatting:
+
+     #+BEGIN_SRC sqlite
+       select empid,strftime('%d-%m-%Y %w %W',updatedon) from employee;
+     #+END_SRC
+
+**** Performance Information about Queries
+
+     Use ~explain~ as in
+
+     #+BEGIN_SRC sqlite :db /tmp/test_db.db
+       explain query plan select * from empdept;
+       explain select empid,strftime('%d-%m-%Y %w %W',updatedon) from employee;
+     #+END_SRC
+
 ** Access via Python
 
    #+BEGIN_SRC python :results output raw :exports none
@@ -166,12 +210,14 @@
 
     You can now ~sqlite3 /tmp/test_db.db~ and
 
+    See also [[https://www.sqlite.org/cli.html][online]] for the possible sql commands.
+
     #+name: sqlite-check-py-input
     #+begin_src sqlite :db /tmp/test_db.db :colnames yes
       .mode csv greeting
       SELECT * FROM Greeting;
 
-      --printf("+----+")
+      .print '----', '----', '----', '----'
       .mode csv cars
       SELECT * FROM Cars;
     #+END_SRC
@@ -187,6 +233,7 @@
     | Goede   | dag!       | nl       | NL      |
     | God     | dag!       | dk       | DK      |
     | God     | dag!       | se       | SE      |
+    | ----    | ----       | ----     | ----    |
     | Id      | Name       | Language | Price   |
     | 1       | Audi       | de       | 52642   |
     | 2       | Mercedes   | de       | 57127   |
@@ -222,12 +269,13 @@
     |   2 | lang    | char(2)     |       1 |            |  1 |
     |   3 | country | char(2)     |       0 |            |  2 |
 
-    #+begin_src sqlite :db /tmp/test_db.db :results raw
+    #+begin_src sqlite :db /tmp/test_db.db :results code
       -- show the main db schema
       .schema sqlite_master
     #+END_SRC
 
     #+RESULTS:
+    #+BEGIN_SRC sqlite
     CREATE TABLE sqlite_master (
       type text,
       name text,
@@ -235,7 +283,7 @@
       rootpage integer,
       sql text
     );
-
+    #+END_SRC
 
 * Literature and References
 
