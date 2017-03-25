@@ -138,6 +138,7 @@
      #+END_SRC
 
      #+RESULTS:
+
      | 1 | Audi     | de | 10000 | 2017-03-25 19:57:17 |
      | 2 | Mercedes | de | 57127 | 2017-03-25 19:35:52 |
      | 3 | Skoda    | cz |  9000 | 2017-03-25 19:35:52 |
@@ -155,6 +156,7 @@
      #+END_SRC
 
      #+RESULTS:
+
      |          | + day-of-week / week-of-year |
      | Audi     | 25-03-2017 6 12              |
      | Mercedes | 25-03-2017 6 12              |
@@ -171,6 +173,7 @@
      #+END_SRC
 
      #+RESULTS:
+
      | Id | Name    | Language | Price | last_update         |
      |----+---------+----------+-------+---------------------|
      |  1 | Audi    | de       | 10000 | 2017-03-25 19:57:17 |
@@ -187,6 +190,7 @@
      #+END_SRC
 
      #+RESULTS:
+
      #+begin_example
      0,0,0,"SCAN TABLE cars"
      0,Init,0,13,0,"",00,
@@ -215,6 +219,7 @@
      #+END_SRC
 
      #+RESULTS:
+
      #+BEGIN_SRC sqlite :db /tmp/test_db.db
      PRAGMA foreign_keys=OFF;
      BEGIN TRANSACTION;
@@ -355,6 +360,7 @@
     #+END_SRC
 
     #+RESULTS: sqlite-check-sql-input
+
     | one     | two  | lang | country |
     |---------+------+------+---------|
     | Good    | day! | en   | UK      |
@@ -374,6 +380,7 @@
     #+END_SRC
 
     #+RESULTS: sqlite-check-py-input
+
     | Id | Name       | Language | Price | last_update            |
     |----+------------+----------+-------+------------------------|
     |  1 | Audi       | de       | 10000 | 2017-03-25 19:57:17    |
@@ -392,6 +399,7 @@
     #+END_SRC
 
     #+RESULTS:
+
     | cid | name        | type    | notnull | dflt_value        | pk |
     |-----+-------------+---------+---------+-------------------+----|
     |   0 | Id          | INTEGER |       1 |                   |  1 |
@@ -405,6 +413,7 @@
     #+END_SRC
 
     #+RESULTS:
+
     | cid | name    | type        | notnull | dflt_value | pk |
     |-----+---------+-------------+---------+------------+----|
     |   0 | one     | varchar(10) |       1 |            |  0 |
@@ -418,6 +427,7 @@
     #+END_SRC
 
     #+RESULTS:
+
     #+BEGIN_SRC sqlite
     CREATE TABLE sqlite_master (
       type text,
