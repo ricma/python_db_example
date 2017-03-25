@@ -164,11 +164,17 @@
      We can use the time stamps for selecting data as follows,
      see also here: [[http://www.sqlite.org/lang_datefunc.html]]
 
-     #+BEGIN_SRC sqlite :db /tmp/test_db.db
+     #+BEGIN_SRC sqlite :db /tmp/test_db.db :colnames yes
        -- select all entries changed between 19:45 and 20:00
        -- Note that these times are UTC
-       select * from cars where last_update between '19:45:00' and '20:00:00';
+       select * from cars where last_update between '2017-03-25 19:45:00' and '2017-03-25 22:00:00';
      #+END_SRC
+
+     #+RESULTS:
+     | Id | Name    | Language | Price | last_update         |
+     |----+---------+----------+-------+---------------------|
+     |  1 | Audi    | de       | 10000 | 2017-03-25 19:57:17 |
+     |  5 | Bentley | en       | 10000 | 2017-03-25 21:41:56 |
 
 **** Performance Information about Queries
 
