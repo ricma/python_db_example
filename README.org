@@ -23,9 +23,9 @@
      );
 
      -- give some content
-     insert into greeting values('Hello', 'world!', 'en', 'UK');
-     --insert into greeting values('G''day', '', 'en', 'UK');
-     insert into greeting values('Hallo', 'Welt!', 'de', 'DE');
+     insert into greeting values('Good', 'day!', 'en', 'UK');
+     insert into greeting values('G''day', '', 'en', 'AU');
+     insert into greeting values('Guten', 'Tag!', 'de', 'DE');
      insert into greeting values('Dobrý', 'den!', 'cz', 'CZ');
      insert into greeting values('Bonjour', null, 'fr', null);
    #+end_src
@@ -54,6 +54,34 @@
     #+END_SRC
 
     There enter ~.tables~ and ~.exit~
+
+*** Further Adding Data from Org Mode
+
+    #+NAME: further_greetings
+    | one   | two  | lang | country |
+    |-------+------+------+---------|
+    | Goede | dag! | nl   | NL      |
+    | God   | dag! | dk   | DK      |
+    | God   | dag! | se   | SE      |
+
+    #+begin_src sqlite :db /tmp/test_db.db :var orgtable=further_greetings :colnames yes
+      .mode csv greeting
+      -- for modes see
+      --   http://www.tutorialspoint.com/sqlite/sqlite_commands.htm
+      .import $orgtable greeting
+      select one, count(*) from greeting group by one;
+    #+end_src
+
+    #+RESULTS:
+    | one     | count(*) |
+    |---------+----------|
+    | Bonjour |        1 |
+    | Dobrý   |        1 |
+    | G'day   |        1 |
+    | God     |        2 |
+    | Goede   |        1 |
+    | Good    |        1 |
+    | Guten   |        1 |
 
 ** Access via Python
 
@@ -118,6 +146,8 @@
                           if name_to_delete in row[1]]
          # Approach II: Do search on database
          # (Faster but maybe not database independent)
+         # See here for commands:
+         #     [[http://www.sqlite.org/lang_corefunc.html]]
          cursor.execute(
              # Note: This is case insensitive
              "select Id FROM cars WHERE Name LIKE ?",
@@ -137,28 +167,80 @@
     You can now ~sqlite3 /tmp/test_db.db~ and
 
     #+name: sqlite-check-py-input
-    #+header: :list
-    #+header: :separator \|
-    #+header: :results raw
-    #+header: :dir /tmp/
-    #+header: :db test_db.db
-    #+BEGIN_SRC sqlite
-      -- make | the delimiter to give valid org-mode results
+    #+begin_src sqlite :db /tmp/test_db.db :colnames yes
+      .mode csv greeting
+      SELECT * FROM Greeting;
 
-      SELECT '', *, '' FROM Greeting;
-      SELECT '', *, '' FROM Cars;
+      --printf("+----+")
+      .mode csv cars
+      SELECT * FROM Cars;
     #+END_SRC
 
     #+RESULTS: sqlite-check-py-input
-    |   Hello | world!     | en |     UK |
-    |   Hallo | Welt!      | de |     DE |
-    |   Dobrý | den!       | cz |     CZ |
-    | Bonjour |            | fr |        |
-    |       1 | Audi       | de |  52642 |
-    |       2 | Mercedes   | de |  57127 |
-    |       3 | Skoda      | cz |   9000 |
-    |       4 | Volvo      | se |  29000 |
-    |       5 | Bentley    | en | 350000 |
-    |       6 | Citroen    | fr |  21000 |
-    |       7 | Hummer     | en |  41400 |
-    |       9 | Volkswagen | de |  21600 |
+    | one     | two        | lang     | country |
+    |---------+------------+----------+---------|
+    | Good    | day!       | en       | UK      |
+    | G'day   |            | en       | AU      |
+    | Guten   | Tag!       | de       | DE      |
+    | Dobrý   | den!       | cz       | CZ      |
+    | Bonjour |            | fr       |         |
+    | Goede   | dag!       | nl       | NL      |
+    | God     | dag!       | dk       | DK      |
+    | God     | dag!       | se       | SE      |
+    | Id      | Name       | Language | Price   |
+    | 1       | Audi       | de       | 52642   |
+    | 2       | Mercedes   | de       | 57127   |
+    | 3       | Skoda      | cz       | 9000    |
+    | 4       | Volvo      | se       | 29000   |
+    | 5       | Bentley    | en       | 350000  |
+    | 6       | Citroen    | fr       | 21000   |
+    | 7       | Hummer     | en       | 41400   |
+    | 9       | Volkswagen | de       | 21600   |
+
+    And to get some info about the tables
+    #+begin_src sqlite :db /tmp/test_db.db :colnames yes
+      pragma table_info(Cars);
+    #+END_SRC
+
+    #+RESULTS:
+    | cid | name     | type    | notnull | dflt_value | pk |
+    |-----+----------+---------+---------+------------+----|
+    |   0 | Id       | INTEGER |       1 |            |  1 |
+    |   1 | Name     | TEXT    |       0 |            |  0 |
+    |   2 | Language | CHAR(2) |       0 |            |  0 |
+    |   3 | Price    | INT     |       0 |            |  0 |
+
+    #+begin_src sqlite :db /tmp/test_db.db :colnames yes
+      pragma table_info(greeting);
+    #+END_SRC
+
+    #+RESULTS:
+    | cid | name    | type        | notnull | dflt_value | pk |
+    |-----+---------+-------------+---------+------------+----|
+    |   0 | one     | varchar(10) |       1 |            |  0 |
+    |   1 | two     | varchar(10) |       0 |            |  0 |
+    |   2 | lang    | char(2)     |       1 |            |  1 |
+    |   3 | country | char(2)     |       0 |            |  2 |
+
+    #+begin_src sqlite :db /tmp/test_db.db :results raw
+      -- show the main db schema
+      .schema sqlite_master
+    #+END_SRC
+
+    #+RESULTS:
+    CREATE TABLE sqlite_master (
+      type text,
+      name text,
+      tbl_name text,
+      rootpage integer,
+      sql text
+    );
+
+
+* Literature and References
+
+** SQLite
+
+*** Core Functions
+
+    [[http://www.sqlite.org/lang_corefunc.html]]
