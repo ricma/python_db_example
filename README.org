@@ -127,6 +127,51 @@
        explain select empid,strftime('%d-%m-%Y %w %W',updatedon) from employee;
      #+END_SRC
 
+**** Dump the Whole Database
+
+     #+BEGIN_SRC sqlite :db /tmp/test_db.db :results code
+       .dump
+     #+END_SRC
+
+     #+RESULTS:
+     #+BEGIN_SRC sqlite
+     PRAGMA foreign_keys=OFF;
+     BEGIN TRANSACTION;
+     CREATE TABLE Cars(
+           Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+           Name TEXT,
+           Language CHAR(2),
+           Price INT
+         );
+     INSERT INTO "Cars" VALUES(1,'Audi','de',52642);
+     INSERT INTO "Cars" VALUES(2,'Mercedes','de',57127);
+     INSERT INTO "Cars" VALUES(3,'Skoda','cz',9000);
+     INSERT INTO "Cars" VALUES(4,'Volvo','se',29000);
+     INSERT INTO "Cars" VALUES(5,'Bentley','en',350000);
+     INSERT INTO "Cars" VALUES(6,'Citroen','fr',21000);
+     INSERT INTO "Cars" VALUES(7,'Hummer','en',41400);
+     INSERT INTO "Cars" VALUES(9,'Volkswagen','de',21600);
+     CREATE TABLE greeting(
+         one varchar(10) not null,
+         two varchar(10),
+         lang char(2) not null,
+         country char(2),
+         primary key (lang, country)
+     );
+     INSERT INTO "greeting" VALUES('Good','day!','en','UK');
+     INSERT INTO "greeting" VALUES('G''day','','en','AU');
+     INSERT INTO "greeting" VALUES('Guten','Tag!','de','DE');
+     INSERT INTO "greeting" VALUES('Dobrý','den!','cz','CZ');
+     INSERT INTO "greeting" VALUES('Bonjour',NULL,'fr',NULL);
+     INSERT INTO "greeting" VALUES('Goede','dag!','nl','NL');
+     INSERT INTO "greeting" VALUES('God','dag!','dk','DK');
+     INSERT INTO "greeting" VALUES('God','dag!','se','SE');
+     DELETE FROM sqlite_sequence;
+     INSERT INTO "sqlite_sequence" VALUES('Cars',9);
+     COMMIT;
+     #+END_SRC
+
+
 ** Access via Python
 
    #+BEGIN_SRC python :results output raw :exports none
