@@ -1,0 +1,69 @@
+
+* SQLite Python Example
+
+  Taken from [[http://zetcode.com/db/sqlitepythontutorial/][here]].
+
+** Create an Empty Database
+
+   #+BEGIN_SRC shell-script
+     sqlite3 /tmp/test_db.db
+   #+END_SRC
+
+   There enter ~.tables~ and ~.exit~
+
+   This creates a database [[/tmp/test_db.db]]
+
+** Access via Python
+
+   #+BEGIN_SRC python :results output raw :exports none
+     import sqlite3
+
+     dbase = "/tmp/test_db.db"
+
+
+     def create_data(con):
+         """Create some data in the db"""
+         cur = con.cursor()
+         # Begin with empty table
+         try:
+             cur.execute("DROP TABLE Cars")
+         except sqlite3.OperationalError:   # table Cars already exists
+             pass
+
+         cur.execute("CREATE TABLE Cars(Id INT, Name TEXT, Price INT)")
+         cur.execute("INSERT INTO Cars VALUES(1,'Audi',52642)")
+         cur.execute("INSERT INTO Cars VALUES(2,'Mercedes',57127)")
+         cur.execute("INSERT INTO Cars VALUES(3,'Skoda',9000)")
+         cur.execute("INSERT INTO Cars VALUES(4,'Volvo',29000)")
+         cur.execute("INSERT INTO Cars VALUES(5,'Bentley',350000)")
+         cur.execute("INSERT INTO Cars VALUES(6,'Citroen',21000)")
+         cur.execute("INSERT INTO Cars VALUES(7,'Hummer',41400)")
+         cur.execute("INSERT INTO Cars VALUES(8,'Volkswagen',21600)")
+
+     with sqlite3.connect(dbase) as connection:
+         create_data(connection)
+   #+END_SRC
+
+   #+RESULTS:
+
+*** Check in SQL
+
+    You can now ~sqlite3 /tmp/test_db.db~ and
+
+    #+BEGIN_SRC sql
+      -- make | the delimiter to give valid org-mode results
+      .mode list
+      .headers on
+
+      SELECT * FROM Cars;
+    #+END_SRC
+    | Id | Name       |  Price |
+    |----+------------+--------|
+    |  1 | Audi       |  52642 |
+    |  2 | Mercedes   |  57127 |
+    |  3 | Skoda      |   9000 |
+    |  4 | Volvo      |  29000 |
+    |  5 | Bentley    | 350000 |
+    |  6 | Citroen    |  21000 |
+    |  7 | Hummer     |  41400 |
+    |  8 | Volkswagen |  21600 |
