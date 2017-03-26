@@ -266,7 +266,7 @@
 
      #+RESULTS:
 
-** Access via Python
+** Add Further Data via Python
 
    #+BEGIN_SRC python :results output raw :exports code
      import sqlite3
@@ -346,6 +346,48 @@
    #+END_SRC
 
    #+RESULTS:
+
+** Access via Python
+
+   The full documentation is [[https://docs.python.org/2/library/sqlite3.html][here]] and [[https://docs.python.org/3/library/sqlite3.html][here for py3]].
+
+   #+BEGIN_SRC python :results output raw :exports code
+     import sqlite3
+
+     dbase = "/tmp/test_db.db"
+
+     with sqlite3.connect(
+             # This is possible in python3 only
+             # "file:{0}?mode=ro".format(dbase), uri=True) as connection:
+             "{0}".format(dbase)) as connection:
+         cursor = connection.cursor()
+
+         cursor.execute("""
+             select c.name, c.price, g.country from cars as c
+             inner join greeting as g on c.language = g.lang
+             where g.country not null")
+
+     # Print the results
+
+     print("|Car | Price | Country |\n|---|")
+     print("\n".join((
+         "|{0}|".format("|".join(map(str, item)))
+         for item in cursor.fetchall())))
+   #+END_SRC
+
+   #+RESULTS:
+
+   | Car        | Price | Country |
+   |------------+-------+---------|
+   | Audi       | 10000 | DE      |
+   | Mercedes   | 57127 | DE      |
+   | Skoda      |  9000 | CZ      |
+   | Volvo      | 29000 | SE      |
+   | Bentley    | 10000 | AU      |
+   | Bentley    | 10000 | UK      |
+   | Hummer     | 41400 | AU      |
+   | Hummer     | 41400 | UK      |
+   | Volkswagen | 21600 | DE      |
 
 *** Check in SQL
 
