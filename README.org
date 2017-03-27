@@ -491,3 +491,36 @@
 *** Modes for the output
 
     [[http://www.tutorialspoint.com/sqlite/sqlite_commands.htm]]
+
+* Turtle Example
+  :PROPERTIES:
+  :var: db="./turtle_db.db"
+  :var: csv="./measurement.csv"
+  :db: ./turtle_db.db
+  :END:
+
+  Set up the database
+
+  #+BEGIN_SRC shell
+    test -f ${db} && rm ${db}
+    sqlite3 ${db} < "./turtle_example.sql"
+  #+END_SRC
+
+  #+RESULTS:
+
+  Show all tables:
+  #+BEGIN_SRC sqlite :results output raw
+    .tables
+  #+END_SRC
+
+  #+RESULTS:
+  AnalyseVet   Lieu         Observateur  TDR          Veterinaire
+  InfoJour     MesureTDR    Observation  Tortue       Zone
+
+  #+BEGIN_SRC python
+    with open(csv, "r") as fhn:
+        pass
+  #+END_SRC
+
+  #+RESULTS:
+
