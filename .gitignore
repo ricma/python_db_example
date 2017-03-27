@@ -45,3 +45,7 @@ flycheck_*.el
 
 # directory configuration
 .dir-locals.el
+
+# -----------------------------------------------------------------
+# Ignore the database created
+/turtle_db.db
